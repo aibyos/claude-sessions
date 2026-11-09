@@ -41,17 +41,22 @@ enum Actions {
             .contains { !$0.isTerminated }
     }
 
-    /// A VS Code that is still quitting accepts the request and then exits
-    /// with it, so after launching we check it's really up and retry once.
+    /// Launches VS Code with the folder, then follows the launched process:
+    /// a cold start can take several seconds (longer for a quarantined app in
+    /// Downloads), while a request that reached a VS Code that was still
+    /// quitting dies with it and is sent again once.
     private static func openFolder(
         _ path: String, app: URL, retried: Bool = false, completion: ((Bool) -> Void)? = nil
     ) {
+        trace("open \(path) with \(app.path), running=\(vscodeIsRunning), retry=\(retried)")
         let config = NSWorkspace.OpenConfiguration()
         config.activates = true
         NSWorkspace.shared.open([URL(fileURLWithPath: path)], withApplicationAt: app, configuration: config) {
-            _, error in
+            launched, error in
+            let pid = launched?.processIdentifier
             let message = error?.localizedDescription
             Task { @MainActor in
+                trace("open returned pid=\(pid.map(String.init) ?? "nil") error=\(message ?? "none")")
                 if let message {
                     alert(
                         "Couldn't open VS Code",
@@ -59,23 +64,54 @@ enum Actions {
                     completion?(false)
                     return
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    if vscodeIsRunning {
-                        completion?(true)
-                    } else if !retried {
-                        openFolder(path, app: app, retried: true, completion: completion)
-                        return
-                    } else {
-                        alert("VS Code didn't start", "Try opening it again, or start VS Code from the Dock first.")
-                        completion?(false)
-                    }
-                    // It may still be finishing a quit; check once more after it would have exited.
-                    guard !retried else { return }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
-                        if !vscodeIsRunning { openFolder(path, app: app, retried: true) }
-                    }
-                }
+                follow(pid: pid, path: path, app: app, retried: retried, since: Date(), completion: completion)
             }
+        }
+    }
+
+    private static func follow(
+        pid: pid_t?, path: String, app: URL, retried: Bool, since: Date, completion: ((Bool) -> Void)?
+    ) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let elapsed = Date().timeIntervalSince(since)
+            let alive = pid.map { kill($0, 0) == 0 } ?? vscodeIsRunning
+            if !alive {
+                trace("VS Code process \(pid.map(String.init) ?? "?") exited after \(Int(elapsed)) s, running=\(vscodeIsRunning)")
+                if vscodeIsRunning {
+                    completion?(true)  // handed the folder to another VS Code instance
+                } else if !retried {
+                    openFolder(path, app: app, retried: true, completion: completion)
+                } else {
+                    alert("VS Code didn't start", "VS Code quit right after starting. Open it from the Dock, then try again.")
+                    completion?(false)
+                }
+                return
+            }
+            // Stayed up long enough that it wasn't a VS Code on its way out.
+            let ready = pid.flatMap { NSRunningApplication(processIdentifier: $0)?.isFinishedLaunching } ?? true
+            if ready && elapsed >= 3 {
+                trace("VS Code up after \(Int(elapsed)) s")
+                completion?(true)
+            } else if elapsed > 45 {
+                trace("VS Code still starting after 45 s")
+                completion?(true)
+            } else {
+                follow(pid: pid, path: path, app: app, retried: retried, since: since, completion: completion)
+            }
+        }
+    }
+
+    /// Launch steps go to ~/Library/Caches/ClaudeSessions/vscode-launch.log for troubleshooting.
+    static func trace(_ line: String) {
+        let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("ClaudeSessions/vscode-launch.log")
+        let entry = "\(Date().formatted(.iso8601)) \(line)\n"
+        if let h = try? FileHandle(forWritingTo: url) {
+            h.seekToEndOfFile()
+            h.write(Data(entry.utf8))
+            try? h.close()
+        } else {
+            try? entry.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 
