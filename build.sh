@@ -7,6 +7,8 @@ cd "$(dirname "$0")"
 NAME="Claude Sessions"
 EXE=ClaudeSessions
 APP="build/$NAME.app"
+# The version lives in VERSION; APP_VERSION overrides it (used to test updates).
+VERSION="${APP_VERSION:-$(cat VERSION)}"
 rm -rf build
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
@@ -58,8 +60,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>$EXE</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1</string>
-  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
+  <key>CFBundleVersion</key><string>$VERSION</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHumanReadableCopyright</key><string>© 2026 Orkhan Amrullayev · aibyos.com · MIT License</string>

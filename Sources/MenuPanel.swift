@@ -5,6 +5,7 @@ import SwiftUI
 struct MenuPanel: View {
     @ObservedObject var store: SessionStore
     @ObservedObject var favorites = FavoritesStore.shared
+    @ObservedObject var updater = Updater.shared
     @Environment(\.openWindow) private var openWindow
     @State private var query: String
     @State private var tab: Tab
@@ -21,6 +22,7 @@ struct MenuPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
+            UpdateBanner(updater: updater)
             if tab != .favorites {
                 TextField("Search sessions", text: $query)
                     .textFieldStyle(.roundedBorder)

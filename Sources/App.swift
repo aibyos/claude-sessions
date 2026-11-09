@@ -19,14 +19,25 @@ struct ClaudeSessionsApp: App {
             MainActor.assumeIsolated { renderPreview(to: args[i + 1]) }
             exit(0)
         }
-        MainActor.assumeIsolated { SessionStore.shared.start() }
+        if let i = args.firstIndex(of: "--generate-update-key"), i + 1 < args.count {
+            generateUpdateKey(at: args[i + 1])
+            exit(0)
+        }
+        if let i = args.firstIndex(of: "--sign-update"), i + 2 < args.count {
+            signUpdate(zip: args[i + 1], keyFile: args[i + 2])
+            exit(0)
+        }
+        MainActor.assumeIsolated {
+            SessionStore.shared.start()
+            Updater.shared.start()
+        }
     }
 
     var body: some Scene {
         MenuBarExtra {
             MenuPanel(store: store)
         } label: {
-            MenuBarLabel(running: store.running.count)
+            MenuBarLabel(running: store.running.count, updater: Updater.shared)
         }
         .menuBarExtraStyle(.window)
 
@@ -46,11 +57,13 @@ struct ClaudeSessionsApp: App {
 
 struct MenuBarLabel: View {
     let running: Int
+    @ObservedObject var updater: Updater
 
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: "bubble.left.and.text.bubble.right")
             if running > 0 { Text("\(running)").monospacedDigit() }
+            if updater.available != nil { Image(systemName: "arrow.up.circle.fill") }
         }
         .help("\(running) Claude Code sessions running")
     }

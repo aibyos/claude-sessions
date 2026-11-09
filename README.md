@@ -48,6 +48,7 @@ Claude Sessions reads Claude Code's local files and answers all three.
 | ⏳ **Deleted soon** | See which conversations Claude Code's cleanup will delete next. Change the retention period (e.g. 1 year) from the app, with a backup of your settings. |
 | 👥 **Multiple accounts** | Sessions are grouped by the Claude account that owned them, so work and personal stay distinguishable. |
 | 🗑 **Deleted sessions** *(optional)* | Summaries of already-deleted conversations that survive in old index files. Off by default. |
+| ⬆️ **Updates** | Optional daily check for new versions. Install with one click or automatically; every update is signature-checked first. |
 | ❓ **Built-in help** | Every screen has a **?** that explains how Claude Code stores, cleans up and resumes sessions. |
 
 <p align="center">
@@ -98,6 +99,12 @@ cd claude-sessions
 `build.sh` includes a workaround for a known Command Line Tools issue (a duplicate
 `SwiftBridging` module map) that otherwise breaks `import SwiftUI`.
 
+### Updates
+
+On first launch the app asks whether to **install updates automatically**, **just notify you**, or
+**not check at all**. Change it any time under **? → Updates**. The app checks GitHub once a day and
+when your Mac wakes up. Keep the app in Applications (or `~/Applications`) so it can replace itself.
+
 Requirements: macOS 15 Sequoia or later, Claude Code (VS Code extension and/or CLI).
 To launch at login: System Settings → General → Login Items → add Claude Sessions.
 
@@ -127,7 +134,9 @@ original folder).
 ## Privacy
 
 - **Read-only**: transcripts are never edited or deleted.
-- **Local only**: no network access, no analytics. Nothing leaves your Mac.
+- **Local only**: no analytics, and your sessions never leave your Mac.
+- **Update check, if you allow it**: once a day the app asks the GitHub API for the latest release.
+  The request contains nothing about you or your sessions. Choose *Don't check* to keep the app fully offline.
 - **One exception, on request**: the retention setting. It's only changed when you press *Apply*
   and confirm, and `settings.json` is backed up first.
 
@@ -162,6 +171,18 @@ Issues and pull requests are welcome. To regenerate the screenshots and GIF from
 ./build.sh --no-install
 "build/Claude Sessions.app/Contents/MacOS/ClaudeSessions" --make-media docs
 ```
+
+## Releasing (maintainers)
+
+1. Bump the version in `VERSION`.
+2. `./package.sh` builds a universal app, zips it and signs the zip with the release key
+   (`~/.config/aibyos/claude-sessions-update.key`, never committed). It prints the `gh release create`
+   command to run; upload **both** `Claude-Sessions.zip` and `Claude-Sessions.zip.sig`.
+3. Put `[important]` in the release notes to show a pop-up instead of only a badge.
+
+Installed copies only accept a zip signed with that key, containing this app's bundle ID and a newer
+version. If the key is lost, existing installs can't update anymore and need one manual reinstall of a
+build with a new public key, so keep a backup of it somewhere safe (e.g. a password manager).
 
 ## Author
 

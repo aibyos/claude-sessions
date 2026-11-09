@@ -424,6 +424,13 @@ func makeMedia(to dir: String) {
     helpFrame(.cleanup, delay: 3.2, still: "help")
     helpFrame(.accounts, delay: 2.6)
     helpFrame(.favorites, delay: 2.4)
+    let demoURL = URL(string: repoURL + "/releases")!
+    Updater.shared.loadDemo(
+        ReleaseInfo(
+            version: "0.3.0", notes: "- Favorites can be reordered by dragging\n- Faster indexing of very large transcripts",
+            important: false, zipURL: demoURL, sigURL: demoURL, pageURL: demoURL))
+    panelFrame(.favorites, delay: 2.4, still: "update-panel")
+    helpFrame(.updates, delay: 2.6, still: "updates")
 
     // GIF at 1x keeps the file small; stills stay at full resolution.
     let gifFrames = frames.compactMap { f, d in resized(f, width: Int(canvas.width)).map { ($0, d) } }

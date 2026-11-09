@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum HelpTopic: String, CaseIterable, Identifiable {
-    case overview, favorites, storage, cleanup, resume, running, accounts, titles, privacy, about
+    case overview, favorites, storage, cleanup, resume, running, accounts, titles, privacy, updates, about
     var id: Self { self }
 
     var title: String {
@@ -16,6 +16,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .accounts: "Multiple Claude accounts"
         case .titles: "Titles, prompts and search"
         case .privacy: "Privacy and safety"
+        case .updates: "Updates"
         case .about: "About"
         }
     }
@@ -31,6 +32,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .accounts: "person.2"
         case .titles: "text.magnifyingglass"
         case .privacy: "lock.shield"
+        case .updates: "arrow.up.circle"
         case .about: "info.circle"
         }
     }
@@ -78,6 +80,7 @@ struct HelpView: View {
         case .accounts: accounts
         case .titles: titles
         case .privacy: privacy
+        case .updates: UpdatesHelp()
         case .about: about
         }
     }
@@ -236,7 +239,8 @@ struct HelpView: View {
         VStack(alignment: .leading, spacing: 12) {
             Bullets([
                 "**Read-only.** The app reads transcripts and never edits or deletes them.",
-                "**Local only.** Nothing is sent anywhere. A small index is cached in `~/Library/Caches/ClaudeSessions` so it starts fast.",
+                "**Local only.** Your sessions never leave your Mac. A small index is cached in `~/Library/Caches/ClaudeSessions` so it starts fast.",
+                "**Update check (optional).** If you allowed it, the app asks GitHub once a day whether a new version exists. That request contains nothing about you or your sessions. See *Updates*.",
                 "**The one exception** is the history-retention setting. It's only changed when you press Apply and confirm, and a backup of `settings.json` is saved first.",
                 "Transcripts are plain text and include everything you pasted, including any secrets. Keep that in mind before sharing or syncing `~/.claude`.",
             ])
@@ -322,7 +326,7 @@ struct CleanupHelp: View {
 
 // MARK: - Text helpers
 
-private struct P: View {
+struct P: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
@@ -330,7 +334,7 @@ private struct P: View {
     }
 }
 
-private struct H: View {
+struct H: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View { Text(text).font(.headline).padding(.top, 6) }
@@ -348,7 +352,7 @@ private struct Code: View {
     }
 }
 
-private struct Bullets: View {
+struct Bullets: View {
     let items: [String]
     init(_ items: [String]) { self.items = items }
     var body: some View {
