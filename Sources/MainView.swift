@@ -120,9 +120,11 @@ struct MainView: View {
 
 struct Sidebar: View {
     @ObservedObject var store: SessionStore
+    @ObservedObject var favorites = FavoritesStore.shared
 
     var body: some View {
         List(selection: $store.filter) {
+            FavoritesSection(store: store, favorites: favorites)
             Section("Sessions") {
                 row(.running, "Running now", "dot.radiowaves.left.and.right")
                 row(.today, "Today", "sun.max")
@@ -143,6 +145,19 @@ struct Sidebar: View {
                         Text("\(p.count)").foregroundStyle(.secondary).monospacedDigit()
                     }
                     .tag(SidebarFilter.project(p.path))
+                    .contextMenu {
+                        if favorites.contains(p.path) {
+                            Button("Remove from Favorites") {
+                                favorites.items.first { $0.path == p.path }.map(favorites.remove)
+                            }
+                        } else if FileManager.default.fileExists(atPath: p.path) {
+                            Button("Add to Favorites") { favorites.add(p.path) }
+                        }
+                        Button("Open Folder in VS Code") { Actions.openFolderInVSCode(p.path) }
+                        Button("Show in Finder") {
+                            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: p.path)])
+                        }
+                    }
                 }
             }
             Section {
@@ -252,6 +267,9 @@ struct SessionList: View {
 
     private var emptyText: String {
         if !store.search.isEmpty { return "No sessions match “\(store.search)”." }
+        if case .favorite = store.filter {
+            return "No Claude Code sessions in this project yet. Use the open button next to the favorite to open it in VS Code."
+        }
         if case .project = store.filter, store.showDeleted {
             return "All conversations in this project were deleted by Claude Code's cleanup, and no summaries survived."
         }
@@ -267,6 +285,7 @@ struct SessionList: View {
         case .expiring: "Deleted soon"
         case .deleted: "Deleted"
         case .project(let p): projectDisplayName(p)
+        case .favorite(let p): FavoritesStore.shared.items.first { $0.path == p }?.name ?? projectDisplayName(p)
         case .account(let id): store.accountRows.first { $0.id == id }?.label ?? "Account"
         }
     }
@@ -584,5 +603,84 @@ struct HTMLFileRow: View {
             Text(folder).font(.caption).foregroundStyle(.tertiary).lineLimit(1).truncationMode(.middle)
                 .help(path)
         }
+    }
+}
+
+/// Sidebar section with pinned projects, optionally grouped in folders.
+struct FavoritesSection: View {
+    @ObservedObject var store: SessionStore
+    @ObservedObject var favorites: FavoritesStore
+    /// Folders are expanded unless the user collapsed them.
+    @AppStorage("collapsedFavoriteFolders") private var collapsedRaw = ""
+
+    private func expanded(_ g: String) -> Binding<Bool> {
+        Binding(
+            get: { !collapsedRaw.split(separator: "\n").contains(Substring(g)) },
+            set: { open in
+                var set = Set(collapsedRaw.split(separator: "\n").map(String.init))
+                if open { set.remove(g) } else { set.insert(g) }
+                collapsedRaw = set.sorted().joined(separator: "\n")
+            })
+    }
+
+    var body: some View {
+        Section {
+            if favorites.items.isEmpty {
+                Text("Pin projects to reopen them in VS Code with one click. Use + or right-click a project.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(favorites.grouped, id: \.group) { section in
+                if let g = section.group {
+                    DisclosureGroup(isExpanded: expanded(g)) {
+                        ForEach(section.items) { row($0) }
+                    } label: {
+                        Label(g, systemImage: "folder")
+                            .contextMenu { FolderMenu(favorites: favorites, group: g, items: section.items) }
+                    }
+                } else {
+                    ForEach(section.items) { row($0) }
+                }
+            }
+            if favorites.vscodeRunning {
+                HStack {
+                    Text("VS Code: \(bytes(favorites.vscodeMemory, memory: true))")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Quit…") { favorites.quitVSCode() }
+                        .buttonStyle(.plain).foregroundStyle(Color.accentColor).font(.caption)
+                        .help("Quit VS Code to free memory; reopen favorites from here later")
+                }
+            }
+        } header: {
+            HStack {
+                Text("Favorites")
+                Spacer()
+                AddFavoriteMenu(favorites: favorites, store: store)
+                HelpButton(topic: .favorites)
+            }
+        }
+    }
+
+    private func row(_ f: Favorite) -> some View {
+        let count = store.count(.favorite(f.path))
+        let isOpen = store.vscodeWorkspaces.contains(f.path)
+        return HStack(spacing: 4) {
+            Label(f.name, systemImage: f.exists ? (isOpen ? "star.fill" : "star") : "star.slash")
+                .foregroundStyle(f.exists ? .primary : .secondary)
+                .help(f.exists ? f.path + (isOpen ? "\nOpen in VS Code" : "") : "Not found: \(f.path)")
+            Spacer()
+            Button {
+                favorites.open(f)
+            } label: {
+                Image(systemName: "arrow.up.forward.app")
+            }
+            .buttonStyle(.borderless)
+            .help("Open in VS Code")
+            if count > 0 {
+                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+            }
+        }
+        .tag(SidebarFilter.favorite(f.path))
+        .contextMenu { FavoriteMenu(favorites: favorites, favorite: f) }
     }
 }

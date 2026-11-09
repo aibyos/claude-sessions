@@ -5,6 +5,8 @@ import SwiftUI
 enum SidebarFilter: Hashable {
     case running, today, week, all, expiring, deleted
     case project(String)
+    /// A favorite's folder; same sessions as `.project`, separate so only one sidebar row highlights.
+    case favorite(String)
     /// Account UUID, or "" for sessions that don't record one.
     case account(String)
 }
@@ -273,6 +275,7 @@ final class SessionStore: ObservableObject {
     func refreshLive() {
         running = Self.readRunning()
         vscodeWorkspaces = Self.readVSCodeWorkspaces()
+        FavoritesStore.shared.refreshVSCode()
     }
 
     nonisolated private static func readRunning() -> [String: RunningSession] {
@@ -360,7 +363,7 @@ final class SessionStore: ObservableObject {
                 case .all: true
                 case .expiring: expiresSoon(s)
                 case .deleted: s.isDeleted
-                case .project(let path): s.projectPath == path
+                case .project(let path), .favorite(let path): s.projectPath == path
                 case .account(let id): (s.accountId ?? "") == id
                 }
             return keep && s.matches(search)

@@ -172,6 +172,7 @@ func renderPreview(to dir: String) {
     render(CleanupHelp(store: store).padding(24), "help-cleanup.png", CGSize(width: 700, height: 760))
     print("running tab: \(store.count(.running)) of \(store.running.count) processes; unsaved: \(store.unsavedRunning.map { "\($0.projectName) since \(fullDate($0.created))" })")
     print("deleted summaries: \(store.deletedSessions.count), empty projects: \(store.emptyProjects)")
+    print("vscode running=\(FavoritesStore.shared.vscodeRunning) memory=\(bytes(FavoritesStore.shared.vscodeMemory, memory: true)) favorites=\(FavoritesStore.shared.items.count)")
     for a in store.accountRows { print("account: \(a.label) [\(a.detail ?? "")] = \(a.count)") }
     for s in store.deletedSessions.prefix(4) { print("deleted: \(s.projectName) | \(s.title) | \(fullDate(s.created))") }
     for s in store.visibleSessions where !s.htmlFiles.isEmpty {

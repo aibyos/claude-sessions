@@ -142,6 +142,17 @@ private func loadSampleData(into store: SessionStore) {
         ],
         currentAccount: workAccount,
         workspaces: ["/Users/you/code/acme-web", "/Users/you/code/data-pipeline"])
+    Favorite.assumeExist = true
+    let code = "/Users/you/code/"
+    FavoritesStore.shared.loadDemo(
+        [
+            Favorite(path: code + "acme-web", name: "acme-web", group: "Acme"),
+            Favorite(path: code + "data-pipeline", name: "data-pipeline", group: "Acme"),
+            Favorite(path: code + "infra", name: "infra", group: "Acme"),
+            Favorite(path: code + "ml-experiments", name: "ml-experiments", group: "Research"),
+            Favorite(path: code + "personal-site", name: "personal-site"),
+            Favorite(path: code + "dotfiles", name: "dotfiles"),
+        ], memory: 2_870_000_000)
 }
 
 // MARK: - Rendering
@@ -372,7 +383,7 @@ func makeMedia(to dir: String) {
     var stills: [String: CGImage] = [:]
 
     func panelFrame(_ tab: MenuPanel.Tab, query: String = "", delay: Double, still: String? = nil) {
-        panelShot.show(MenuPanel(store: store, initialTab: tab, initialQuery: query))
+        panelShot.show(MenuPanel(store: store, initialTab: tab, initialQuery: query).id("\(tab)|\(query)"))
         guard let img = panelShot.capture(),
             let f = framedPanel(img, canvas: canvas, running: store.count(.running), reference: reference)
         else { return }
@@ -401,7 +412,9 @@ func makeMedia(to dir: String) {
     panelFrame(.recent, delay: 2.6, still: "panel")
     panelFrame(.running, delay: 2.0)
     panelFrame(.recent, query: "terraform", delay: 1.8)
+    panelFrame(.favorites, delay: 2.6, still: "favorites")
     mainFrame(.all, select: ids[0], delay: 3.2, still: "main")
+    mainFrame(.favorite("/Users/you/code/data-pipeline"), select: ids[2], delay: 2.6, still: "favorites-window")
     mainFrame(.running, select: ids[4], delay: 3.0, still: "running")
     mainFrame(.account(personalAccount), select: ids[5], delay: 2.4)
     mainFrame(.expiring, select: ids[9], delay: 2.6)
@@ -410,6 +423,7 @@ func makeMedia(to dir: String) {
     store.showDeleted = false
     helpFrame(.cleanup, delay: 3.2, still: "help")
     helpFrame(.accounts, delay: 2.6)
+    helpFrame(.favorites, delay: 2.4)
 
     // GIF at 1x keeps the file small; stills stay at full resolution.
     let gifFrames = frames.compactMap { f, d in resized(f, width: Int(canvas.width)).map { ($0, d) } }

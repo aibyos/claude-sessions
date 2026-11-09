@@ -2,12 +2,13 @@ import AppKit
 import SwiftUI
 
 enum HelpTopic: String, CaseIterable, Identifiable {
-    case overview, storage, cleanup, resume, running, accounts, titles, privacy, about
+    case overview, favorites, storage, cleanup, resume, running, accounts, titles, privacy, about
     var id: Self { self }
 
     var title: String {
         switch self {
         case .overview: "What this app does"
+        case .favorites: "Favorite projects"
         case .storage: "Where sessions are stored"
         case .cleanup: "Automatic cleanup (history retention)"
         case .resume: "Resuming a session"
@@ -22,6 +23,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .overview: "sparkles"
+        case .favorites: "star"
         case .storage: "folder"
         case .cleanup: "clock.arrow.circlepath"
         case .resume: "play.circle"
@@ -68,6 +70,7 @@ struct HelpView: View {
     @ViewBuilder private func content(_ topic: HelpTopic) -> some View {
         switch topic {
         case .overview: overview
+        case .favorites: favoritesHelp
         case .storage: storage
         case .cleanup: CleanupHelp(store: store)
         case .resume: resume
@@ -90,6 +93,31 @@ struct HelpView: View {
                 "The list refreshes on its own: running sessions every 5 seconds, transcripts every 30 seconds.",
             ])
             P("Look for the **?** buttons. Each one opens this help on the relevant topic.")
+        }
+    }
+
+    private var favoritesHelp: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            P("Favorites are shortcuts to the projects you work on. Every open VS Code window uses memory (often 1 to 3 GB with extensions and Claude Code running), so you can quit VS Code when you don't need it and reopen any project later with one click.")
+            H("Adding")
+            Bullets([
+                "**+** in the panel's ★ tab or next to *Favorites* in the sidebar: choose folders (or `.code-workspace` files), add the VS Code windows open right now, or pick a project you've used Claude Code in.",
+                "Right-click a project in the sidebar → **Add to Favorites**.",
+            ])
+            H("Folders")
+            Bullets([
+                "Folders are optional. Right-click a favorite → **Move to Folder → New Folder…** to group them, e.g. by client or team.",
+                "Right-click a folder → **Open All** opens each project in its own VS Code window.",
+                "Removing a folder keeps its favorites; they just become ungrouped.",
+            ])
+            H("Opening and freeing memory")
+            Bullets([
+                "Click a favorite to open it in VS Code. If it's already open, VS Code brings that window to the front.",
+                "**open** (green) means the project is open in a VS Code window where Claude Code is active.",
+                "The memory figure is VS Code with all its helper processes. **Quit VS Code…** asks VS Code to quit normally: it asks about unsaved files first. Claude Code tabs end with it, but their conversations are saved and can be resumed.",
+                "In the sidebar, selecting a favorite shows the Claude sessions from that project.",
+            ])
+            P("Favorites are stored in this app's preferences on your Mac. Nothing in your projects is changed.")
         }
     }
 

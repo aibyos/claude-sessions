@@ -40,6 +40,7 @@ Claude Sessions reads Claude Code's local files and answers all three.
 
 | | |
 |---|---|
+| ⭐ **Favorite projects** | Pin the repos you work on, optionally in folders. See how much memory VS Code uses, quit it to free RAM, and reopen any project with one click later. |
 | 🗂 **All sessions, one list** | Every conversation from every project, newest first, with AI-generated titles, project, git branch and VS Code/terminal source. Full-text search across titles and every prompt. |
 | 🔗 **Links** | Pull requests, published artifacts, and every HTML file the session wrote. Open it in your browser or show it in Finder. |
 | ▶️ **One-click resume** | **Open in VS Code** opens the project, then that exact conversation in the Claude Code extension. **Resume in Terminal** runs `claude --resume <id>` in the right folder. Or copy the command. |
@@ -54,8 +55,11 @@ Claude Sessions reads Claude Code's local files and answers all three.
   <img src="docs/running.png" width="49%" alt="Running session with memory use">
 </p>
 <p align="center">
+  <img src="docs/favorites.png" width="49%" alt="Favorite projects with VS Code memory use">
   <img src="docs/deleted.png" width="49%" alt="Deleted session summary">
-  <img src="docs/help.png" width="49%" alt="Help: automatic cleanup and retention setting">
+</p>
+<p align="center">
+  <img src="docs/help.png" width="60%" alt="Help: automatic cleanup and retention setting">
 </p>
 
 ## Install
@@ -138,6 +142,12 @@ the account signed in **now**. For full separation, use `CLAUDE_CONFIG_DIR` per 
 **Why are my older conversations missing?**
 Claude Code deletes transcripts 30 days after their last activity unless `cleanupPeriodDays` is set.
 Open **? → Automatic cleanup** to raise it. Already-deleted transcripts can't be recovered.
+
+**Where are favorites stored? How is VS Code's memory measured?**
+In the app's preferences (`~/Library/Preferences/com.aibyos.claude-sessions.plist`); your projects aren't
+touched. The memory figure is the sum of every VS Code process's footprint, the same number Activity
+Monitor shows in its Memory column. It includes compressed and swapped memory, so it's often well above
+what's in RAM right now. **Quit VS Code…** quits it normally, so it still asks about unsaved files.
 
 **Some running sessions say "nothing saved".**
 A `claude` process is running but has no transcript: usually a VS Code tab that was opened and never

@@ -16,15 +16,28 @@ enum Actions {
             alert("Visual Studio Code isn't installed", "Use “Resume in Terminal” instead.")
             return
         }
-        let config = NSWorkspace.OpenConfiguration()
-        config.activates = true
-        NSWorkspace.shared.open([URL(fileURLWithPath: s.projectPath)], withApplicationAt: app, configuration: config)
+        openFolder(s.projectPath, app: app)
         let delay: TimeInterval = folderAlreadyOpen ? 1.0 : 4.0
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             if let url = URL(string: "vscode://anthropic.claude-code/open?session=\(s.id)") {
                 NSWorkspace.shared.open(url)
             }
         }
+    }
+
+    /// Opens a folder or `.code-workspace` file in VS Code (focuses it if already open).
+    static func openFolderInVSCode(_ path: String) {
+        guard let app = vscodeURL else {
+            alert("Visual Studio Code isn't installed", "Install it from code.visualstudio.com.")
+            return
+        }
+        openFolder(path, app: app)
+    }
+
+    private static func openFolder(_ path: String, app: URL) {
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = true
+        NSWorkspace.shared.open([URL(fileURLWithPath: path)], withApplicationAt: app, configuration: config)
     }
 
     static func resumeCommand(_ s: SessionInfo) -> String {

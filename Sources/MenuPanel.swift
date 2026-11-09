@@ -4,32 +4,42 @@ import SwiftUI
 /// The panel that drops down from the menu bar icon.
 struct MenuPanel: View {
     @ObservedObject var store: SessionStore
+    @ObservedObject var favorites = FavoritesStore.shared
     @Environment(\.openWindow) private var openWindow
     @State private var query: String
     @State private var tab: Tab
 
-    init(store: SessionStore, initialTab: Tab = .recent, initialQuery: String = "") {
+    init(store: SessionStore, initialTab: Tab? = nil, initialQuery: String = "") {
         self.store = store
-        _tab = State(initialValue: initialTab)
+        let saved = UserDefaults.standard.string(forKey: "panelTab").flatMap(Tab.init(rawValue:))
+        _tab = State(initialValue: initialTab ?? saved ?? .recent)
         _query = State(initialValue: initialQuery)
     }
 
-    enum Tab: Hashable { case running, recent, expiring }
+    enum Tab: String, Hashable { case favorites, running, recent, expiring }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            TextField("Search sessions", text: $query)
-                .textFieldStyle(.roundedBorder)
+            if tab != .favorites {
+                TextField("Search sessions", text: $query)
+                    .textFieldStyle(.roundedBorder)
+            }
             Picker("", selection: $tab) {
+                Image(systemName: "star.fill").help("Favorite projects").tag(Tab.favorites)
                 Text("Running \(store.count(.running))").tag(Tab.running)
                 Text("Recent").tag(Tab.recent)
                 Text("Deleted soon \(store.count(.expiring))").tag(Tab.expiring)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .onChange(of: tab) { _, t in UserDefaults.standard.set(t.rawValue, forKey: "panelTab") }
 
-            list
+            if tab == .favorites {
+                FavoritesPanelList(favorites: favorites, store: store).frame(height: 388)
+            } else {
+                list
+            }
 
             Divider()
             footer
@@ -69,6 +79,7 @@ struct MenuPanel: View {
             case .running: .running
             case .recent: .all
             case .expiring: .expiring
+            case .favorites: .all
             }
         return Array(store.sessions(for: filter, search: query).prefix(40))
     }
@@ -93,6 +104,7 @@ struct MenuPanel: View {
         case .running: return "No Claude Code sessions are running."
         case .recent: return store.isScanning ? "Reading sessions…" : "No sessions found in ~/.claude/projects."
         case .expiring: return "Nothing will be auto-deleted in the next 5 days."
+        case .favorites: return ""
         }
     }
 
