@@ -79,7 +79,7 @@ xattr -dr com.apple.quarantine "/Applications/Claude Sessions.app"
 Needs only the Xcode Command Line Tools (`xcode-select --install`), no Xcode.
 
 ```sh
-git clone https://github.com/orkhan-amrullayev/claude-sessions.git
+git clone https://github.com/aibyos/claude-sessions.git
 cd claude-sessions
 ./build.sh            # builds, installs to ~/Applications and launches
 ```
@@ -154,8 +154,8 @@ Issues and pull requests are welcome. To regenerate the screenshots and GIF from
 
 ## Author
 
-Made by **Orkhan Amrullayev** · [aibyos.com](https://aibyos.com) ·
-[orkhan.amrullayev@gmail.com](mailto:orkhan.amrullayev@gmail.com)
+Made by **Orkhan Amrullayev** ([orkhan.amrullayev@gmail.com](mailto:orkhan.amrullayev@gmail.com)) at
+**[AIBYOS](https://aibyos.com)**, AI by OmniSync: AI engineering, platforms and sovereign GPU compute.
 
 ## License
 

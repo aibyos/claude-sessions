@@ -5,7 +5,7 @@ let claudeDir = homeDir.appendingPathComponent(".claude")
 let projectsDir = claudeDir.appendingPathComponent("projects")
 let settingsFile = claudeDir.appendingPathComponent("settings.json")
 
-let repoURL = "https://github.com/orkhan-amrullayev/claude-sessions"
+let repoURL = "https://github.com/aibyos/claude-sessions"
 let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
 
 /// Claude Code deletes transcripts older than this unless `cleanupPeriodDays` is set.
