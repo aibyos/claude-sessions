@@ -669,13 +669,17 @@ struct FavoritesSection: View {
                 .foregroundStyle(f.exists ? .primary : .secondary)
                 .help(f.exists ? f.path + (isOpen ? "\nOpen in VS Code" : "") : "Not found: \(f.path)")
             Spacer()
-            Button {
-                favorites.open(f)
-            } label: {
-                Image(systemName: "arrow.up.forward.app")
+            if favorites.opening.contains(f.id) {
+                ProgressView().controlSize(.mini).help("Starting VS Code…")
+            } else {
+                Button {
+                    favorites.open(f)
+                } label: {
+                    Image(systemName: "arrow.up.forward.app")
+                }
+                .buttonStyle(.borderless)
+                .help("Open in VS Code")
             }
-            .buttonStyle(.borderless)
-            .help("Open in VS Code")
             if count > 0 {
                 Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
             }

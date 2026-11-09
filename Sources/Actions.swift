@@ -25,19 +25,58 @@ enum Actions {
         }
     }
 
-    /// Opens a folder or `.code-workspace` file in VS Code (focuses it if already open).
-    static func openFolderInVSCode(_ path: String) {
+    /// Opens a folder or `.code-workspace` file in VS Code (focuses it if already open),
+    /// starting VS Code if needed. `completion` reports whether VS Code is up.
+    static func openFolderInVSCode(_ path: String, completion: ((Bool) -> Void)? = nil) {
         guard let app = vscodeURL else {
             alert("Visual Studio Code isn't installed", "Install it from code.visualstudio.com.")
+            completion?(false)
             return
         }
-        openFolder(path, app: app)
+        openFolder(path, app: app, completion: completion)
     }
 
-    private static func openFolder(_ path: String, app: URL) {
+    static var vscodeIsRunning: Bool {
+        NSRunningApplication.runningApplications(withBundleIdentifier: vscodeBundleID)
+            .contains { !$0.isTerminated }
+    }
+
+    /// A VS Code that is still quitting accepts the request and then exits
+    /// with it, so after launching we check it's really up and retry once.
+    private static func openFolder(
+        _ path: String, app: URL, retried: Bool = false, completion: ((Bool) -> Void)? = nil
+    ) {
         let config = NSWorkspace.OpenConfiguration()
         config.activates = true
-        NSWorkspace.shared.open([URL(fileURLWithPath: path)], withApplicationAt: app, configuration: config)
+        NSWorkspace.shared.open([URL(fileURLWithPath: path)], withApplicationAt: app, configuration: config) {
+            _, error in
+            let message = error?.localizedDescription
+            Task { @MainActor in
+                if let message {
+                    alert(
+                        "Couldn't open VS Code",
+                        "\(message)\n\nIf VS Code is in your Downloads folder, move it to Applications and try again.")
+                    completion?(false)
+                    return
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    if vscodeIsRunning {
+                        completion?(true)
+                    } else if !retried {
+                        openFolder(path, app: app, retried: true, completion: completion)
+                        return
+                    } else {
+                        alert("VS Code didn't start", "Try opening it again, or start VS Code from the Dock first.")
+                        completion?(false)
+                    }
+                    // It may still be finishing a quit; check once more after it would have exited.
+                    guard !retried else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
+                        if !vscodeIsRunning { openFolder(path, app: app, retried: true) }
+                    }
+                }
+            }
+        }
     }
 
     static func resumeCommand(_ s: SessionInfo) -> String {

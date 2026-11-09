@@ -27,6 +27,8 @@ final class FavoritesStore: ObservableObject {
     /// Memory used by all VS Code processes, refreshed with the live data.
     @Published private(set) var vscodeMemory: UInt64 = 0
     @Published private(set) var vscodeRunning = false
+    /// Favorites being opened, shown with a spinner until VS Code is up.
+    @Published private(set) var opening: Set<UUID> = []
 
     private init() {
         if let data = UserDefaults.standard.data(forKey: Self.key),
@@ -123,11 +125,13 @@ final class FavoritesStore: ObservableObject {
             Actions.alert("“\(f.name)” isn't there anymore", "\(f.path)\n\nIt may have been moved or deleted. Remove the favorite, or add the new location.")
             return
         }
-        Actions.openFolderInVSCode(f.path)
+        guard !opening.contains(f.id) else { return }
+        opening.insert(f.id)
+        Actions.openFolderInVSCode(f.path) { [weak self] _ in self?.opening.remove(f.id) }
     }
 
     func openAll(_ list: [Favorite]) {
-        for f in list where f.exists { Actions.openFolderInVSCode(f.path) }
+        for f in list where f.exists { open(f) }
     }
 
     func refreshVSCode() {
@@ -387,7 +391,11 @@ private struct FavoritePanelRow: View {
                         .background(Capsule().fill(Color.green.opacity(0.2)))
                         .help("Open in a VS Code window with Claude Code")
                 }
-                if hovering {
+                if favorites.opening.contains(favorite.id) {
+                    ProgressView().controlSize(.small)
+                    Text(favorites.vscodeRunning ? "Opening…" : "Starting VS Code…")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else if hovering {
                     Image(systemName: "arrow.up.forward.app").foregroundStyle(.secondary)
                 }
             }
