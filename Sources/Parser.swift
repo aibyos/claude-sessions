@@ -66,8 +66,27 @@ private func decode(_ line: UnsafeRawBufferPointer) -> [String: Any]? {
     return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
 }
 
+private let htmlToolPattern = try! NSRegularExpression(
+    pattern: #""name":"(?:Write|Edit|MultiEdit|Artifact)","input":\{"file_path":"((?:[^"\\]|\\.)*?\.html?)""#,
+    options: [.caseInsensitive])
+
+/// Collects HTML files written or edited through tool calls. Only the few
+/// lines that contain both markers are converted to a String.
+private func collectHTMLFiles(_ line: UnsafeRawBufferPointer, _ info: inout SessionInfo) {
+    guard contains(line, "\"input\":{\"file_path\":\"", within: line.count),
+        contains(line, ".htm", within: line.count)
+    else { return }
+    let text = String(decoding: line, as: UTF8.self)
+    for m in htmlToolPattern.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+        guard let r = Range(m.range(at: 1), in: text) else { continue }
+        let path = text[r].replacingOccurrences(of: "\\/", with: "/").replacingOccurrences(of: "\\\\", with: "\\")
+        if !info.htmlFiles.contains(path) { info.htmlFiles.append(path) }
+    }
+}
+
 private func handleLine(_ line: UnsafeRawBufferPointer, _ info: inout SessionInfo) {
     let head = 1200
+    collectHTMLFiles(line, &info)
 
     if info.created == nil, line.count < 8192,
         let ts = rawString(line, after: "\"timestamp\":\"", within: line.count)

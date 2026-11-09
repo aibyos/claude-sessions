@@ -29,7 +29,7 @@ private struct CacheEntry: Codable {
 }
 
 private struct CacheFile: Codable {
-    static let currentVersion = 4
+    static let currentVersion = 5
     var version: Int
     var entries: [String: CacheEntry]
 }

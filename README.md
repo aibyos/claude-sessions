@@ -41,6 +41,7 @@ Claude Sessions reads Claude Code's local files and answers all three.
 | | |
 |---|---|
 | 🗂 **All sessions, one list** | Every conversation from every project, newest first, with AI-generated titles, project, git branch and VS Code/terminal source. Full-text search across titles and every prompt. |
+| 🔗 **Links** | Pull requests, published artifacts, and every HTML file the session wrote. Open it in your browser or show it in Finder. |
 | ▶️ **One-click resume** | **Open in VS Code** opens the project, then that exact conversation in the Claude Code extension. **Resume in Terminal** runs `claude --resume <id>` in the right folder. Or copy the command. |
 | 🟢 **Running now** | See which `claude` processes are alive, for how long, and how much memory each uses. Stop idle ones safely. The conversation stays resumable. |
 | ⏳ **Deleted soon** | See which conversations Claude Code's cleanup will delete next. Change the retention period (e.g. 1 year) from the app, with a backup of your settings. |

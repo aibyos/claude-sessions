@@ -324,7 +324,7 @@ struct SessionDetail: View {
                 }
                 if let r = store.running[session.id] { runningBox(r) }
                 detailsGrid
-                if !session.prs.isEmpty || !session.artifacts.isEmpty { links }
+                if !session.prs.isEmpty || !session.artifacts.isEmpty || !session.htmlFiles.isEmpty { links }
                 outline
             }
             .padding(24)
@@ -514,6 +514,9 @@ struct SessionDetail: View {
                 }
                 .buttonStyle(.link)
             }
+            ForEach(session.htmlFiles, id: \.self) { path in
+                HTMLFileRow(path: path)
+            }
         }
     }
 
@@ -545,6 +548,41 @@ struct SessionDetail: View {
                 }
                 .buttonStyle(.link)
             }
+        }
+    }
+}
+
+/// An HTML file the session wrote: opens in the default browser, or shows
+/// that it's gone (scratchpad files under /private/tmp get cleared).
+struct HTMLFileRow: View {
+    let path: String
+
+    var body: some View {
+        let exists = FileManager.default.fileExists(atPath: path)
+        let name = (path as NSString).lastPathComponent
+        let folder = ((path as NSString).deletingLastPathComponent as NSString).abbreviatingWithTildeInPath
+        HStack(spacing: 6) {
+            if exists {
+                Button {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: path))
+                } label: {
+                    Label(name, systemImage: "globe")
+                }
+                .buttonStyle(.link)
+                .help("Open \(path) in your browser")
+                Button {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+                } label: {
+                    Image(systemName: "folder")
+                }
+                .buttonStyle(.borderless)
+                .help("Show in Finder")
+            } else {
+                Label(name, systemImage: "globe").foregroundStyle(.secondary)
+                Text("no longer on disk").font(.caption).foregroundStyle(.tertiary)
+            }
+            Text(folder).font(.caption).foregroundStyle(.tertiary).lineLimit(1).truncationMode(.middle)
+                .help(path)
         }
     }
 }

@@ -72,6 +72,8 @@ struct SessionInfo: Codable, Identifiable, Hashable {
     /// Transcript is gone; only a summary from an old sessions-index.json survives.
     var isDeleted = false
     var messageCount: Int?
+    /// HTML files the session created or edited (Write/Edit/Artifact tool calls).
+    var htmlFiles: [String] = []
     /// A running claude process with no transcript on disk.
     var isUnsaved = false
 

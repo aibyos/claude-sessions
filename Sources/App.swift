@@ -174,6 +174,10 @@ func renderPreview(to dir: String) {
     print("deleted summaries: \(store.deletedSessions.count), empty projects: \(store.emptyProjects)")
     for a in store.accountRows { print("account: \(a.label) [\(a.detail ?? "")] = \(a.count)") }
     for s in store.deletedSessions.prefix(4) { print("deleted: \(s.projectName) | \(s.title) | \(fullDate(s.created))") }
+    for s in store.visibleSessions where !s.htmlFiles.isEmpty {
+        let alive = s.htmlFiles.filter { FileManager.default.fileExists(atPath: $0) }.count
+        print("html: \(s.title) -> \(s.htmlFiles.count) files (\(alive) on disk), e.g. \((s.htmlFiles[0] as NSString).lastPathComponent)")
+    }
     for s in store.visibleSessions.prefix(5) {
         print("- [\(s.source.label)] \(s.projectName) | \(s.title) | prompts=\(s.promptCount) running=\(store.isRunning(s))")
     }
